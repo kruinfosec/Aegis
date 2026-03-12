@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aegis — Smart Contract Vulnerability Scanner</title>
+  <meta name="description" content="Aegis by Kru Infosec: A lightweight Solidity smart contract vulnerability scanner. Upload your .sol file and get a detailed security report instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+  <!-- Background grid + glow -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <main class="page-center">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-wrap">
+        <div class="shield-icon" id="shieldIcon">
+          <svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 4L8 14V36C8 52 20 66 32 72C44 66 56 52 56 36V14L32 4Z" fill="url(#shieldGrad)" stroke="url(#shieldStroke)" stroke-width="2"/>
+            <path d="M24 38L30 44L42 32" stroke="#0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="shieldGrad" x1="32" y1="4" x2="32" y2="72" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0a1628"/>
+                <stop offset="100%" stop-color="#0d2045"/>
+              </linearGradient>
+              <linearGradient id="shieldStroke" x1="8" y1="4" x2="56" y2="72" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00ffe7"/>
+                <stop offset="100%" stop-color="#0066ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-title">Aegis</h1>
+          <p class="logo-sub">by <span class="brand">Kru Infosec</span></p>
+        </div>
+      </div>
+      <p class="tagline">Smart Contract Vulnerability Scanner &mdash; Detect risks before deployment.</p>
+    </header>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+              <span>{{ '⚠️' if category == 'error' else 'ℹ️' }}</span>
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Upload Card -->
+    <section class="card upload-card" id="uploadCard">
+      <form id="uploadForm" action="/scan" method="POST" enctype="multipart/form-data">
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" name="contract" accept=".sol" class="file-input" />
+          <div class="drop-content" id="dropContent">
+            <div class="drop-icon">📄</div>
+            <p class="drop-text">Drag & drop your <code>.sol</code> file here</p>
+            <p class="drop-sub">or</p>
+            <label for="fileInput" class="btn btn-outline" id="browseBtn">Browse File</label>
+          </div>
+          <div class="drop-content file-selected" id="fileSelected" style="display:none;">
+            <div class="drop-icon">✅</div>
+            <p class="drop-text" id="selectedFileName">file.sol</p>
+            <p class="drop-sub">Ready to scan</p>
+          </div>
+        </div>
+
+        <!-- Scan Button -->
+        <button type="submit" class="btn btn-primary" id="scanBtn" disabled>
+          <span class="btn-text">🔍 Scan Contract</span>
+          <span class="btn-loading" style="display:none;">
+            <span class="spinner"></span> Scanning...
+          </span>
+        </button>
+
+      </form>
+    </section>
+
+    <!-- Quick Test Samples -->
+    <section class="card samples-card">
+      <h2 class="section-title">⚡ Quick Test — Sample Contracts</h2>
+      <p class="section-sub">No file? Test with a known-vulnerable contract instantly.</p>
+      <div class="sample-grid">
+        <a href="/sample/reentrancy" class="sample-btn sample-high">
+          <span class="sample-icon">🔴</span>
+          <span class="sample-name">Reentrancy Attack</span>
+          <span class="sample-badge">HIGH</span>
+        </a>
+        <a href="/sample/selfdestruct" class="sample-btn sample-critical">
+          <span class="sample-icon">💀</span>
+          <span class="sample-name">Unprotected Selfdestruct</span>
+          <span class="sample-badge">CRITICAL</span>
+        </a>
+        <a href="/sample/delegatecall" class="sample-btn sample-high">
+          <span class="sample-icon">🎭</span>
+          <span class="sample-name">Untrusted Delegatecall</span>
+          <span class="sample-badge">HIGH</span>
+        </a>
+        <a href="/sample/access" class="sample-btn sample-high">
+          <span class="sample-icon">🔓</span>
+          <span class="sample-name">Missing Access Control</span>
+          <span class="sample-badge">HIGH</span>
+        </a>
+        <a href="/sample/overflow" class="sample-btn sample-medium">
+          <span class="sample-icon">🟡</span>
+          <span class="sample-name">Integer Overflow</span>
+          <span class="sample-badge">MEDIUM</span>
+        </a>
+        <a href="/sample/randomness" class="sample-btn sample-medium">
+          <span class="sample-icon">🎲</span>
+          <span class="sample-name">Weak Randomness</span>
+          <span class="sample-badge">MEDIUM</span>
+        </a>
+        <a href="/sample/timestamp" class="sample-btn sample-low">
+          <span class="sample-icon">⏱️</span>
+          <span class="sample-name">Timestamp Dependence</span>
+          <span class="sample-badge">LOW</span>
+        </a>
+        <a href="/sample/safe" class="sample-btn sample-safe">
+          <span class="sample-icon">✅</span>
+          <span class="sample-name">Safe Contract</span>
+          <span class="sample-badge">SAFE</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- What We Detect -->
+    <section class="card info-card">
+      <h2 class="section-title">🛡️ What Aegis Detects</h2>
+      <div class="vuln-grid">
+        <div class="vuln-item">
+          <span class="vuln-sev sev-critical">CRITICAL</span>
+          <span class="vuln-name">Unprotected Selfdestruct</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-high">HIGH</span>
+          <span class="vuln-name">Reentrancy Attack</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-high">HIGH</span>
+          <span class="vuln-name">tx.origin Misuse</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-high">HIGH</span>
+          <span class="vuln-name">Untrusted Delegatecall</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-high">HIGH</span>
+          <span class="vuln-name">Missing Access Control</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-medium">MEDIUM</span>
+          <span class="vuln-name">Integer Overflow/Underflow</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-medium">MEDIUM</span>
+          <span class="vuln-name">Weak Randomness (block.*)</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-low">LOW</span>
+          <span class="vuln-name">Unchecked Call Return Value</span>
+        </div>
+        <div class="vuln-item">
+          <span class="vuln-sev sev-low">LOW</span>
+          <span class="vuln-name">Timestamp Dependence</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Built by <span class="brand">Kru Infosec</span> &mdash; Smart Contract Security Research</p>
+    </footer>
+
+  </main>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

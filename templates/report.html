@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan Report — Aegis | Kru Infosec</title>
+  <meta name="description" content="Aegis vulnerability scan report for {{ report.filename }}." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <main class="page-report">
+
+    <!-- Top Nav Bar -->
+    <nav class="nav-bar">
+      <div class="logo-wrap logo-small">
+        <div class="shield-icon shield-small">
+          <svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 4L8 14V36C8 52 20 66 32 72C44 66 56 52 56 36V14L32 4Z" fill="url(#shieldGrad2)" stroke="url(#shieldStroke2)" stroke-width="2"/>
+            <path d="M24 38L30 44L42 32" stroke="#0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="shieldGrad2" x1="32" y1="4" x2="32" y2="72" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0a1628"/>
+                <stop offset="100%" stop-color="#0d2045"/>
+              </linearGradient>
+              <linearGradient id="shieldStroke2" x1="8" y1="4" x2="56" y2="72" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00ffe7"/>
+                <stop offset="100%" stop-color="#0066ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="logo-title logo-title-sm">Aegis</span>
+      </div>
+      <a href="/" class="btn btn-outline btn-sm">← Scan Another</a>
+    </nav>
+
+    <!-- Report Header Summary -->
+    <section class="card report-summary-card">
+      <div class="report-header">
+        <div class="report-file-info">
+          <p class="report-label">Scanned File</p>
+          <h2 class="report-filename">📄 {{ report.filename }}</h2>
+          <p class="report-meta">
+            {{ report.line_count }} lines
+            {% if report.pragma_version %} &bull; Solidity {{ report.pragma_version }}{% endif %}
+            {% if report.has_overflow_protection %} &bull; <span class="tag-safe">✅ Overflow Protected (0.8+)</span>{% endif %}
+          </p>
+        </div>
+        <div class="report-risk-badge {{ report.risk_css }}">
+          <span class="risk-icon">{{ report.risk_icon }}</span>
+          <span class="risk-label">{{ report.risk_label }}</span>
+          <span class="risk-score">Score: {{ report.risk_score }}</span>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num">{{ report.total_issues }}</span>
+          <span class="stat-desc">Total Issues</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num stat-critical">{{ report.findings | selectattr("severity", "equalto", "CRITICAL") | list | length }}</span>
+          <span class="stat-desc">Critical</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num stat-high">{{ report.findings | selectattr("severity", "equalto", "HIGH") | list | length }}</span>
+          <span class="stat-desc">High</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num stat-medium">{{ report.findings | selectattr("severity", "equalto", "MEDIUM") | list | length }}</span>
+          <span class="stat-desc">Medium</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Safe Result -->
+    {% if report.total_issues == 0 %}
+    <section class="card safe-card">
+      <div class="safe-content">
+        <div class="safe-icon">✅</div>
+        <h3>No Vulnerabilities Detected</h3>
+        <p>Aegis found no common security issues in this contract. The contract appears safe based on static analysis.</p>
+        <p class="safe-note">⚠️ Note: Static analysis cannot guarantee complete security. Consider a professional audit before deploying high-value contracts.</p>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Findings List -->
+    {% if report.findings %}
+    <section class="findings-section">
+      <h2 class="section-title findings-title">🔍 Vulnerability Findings</h2>
+
+      {% for finding in report.findings %}
+      <div class="finding-card {{ finding.severity_css }}" id="finding-{{ loop.index }}">
+
+        <!-- Finding Header -->
+        <div class="finding-header">
+          <div class="finding-title-row">
+            <span class="finding-num">#{{ loop.index }}</span>
+            <h3 class="finding-name">{{ finding.vulnerability }}</h3>
+          </div>
+          <span class="severity-badge {{ finding.severity_css }}">
+            {{ finding.severity_icon }} {{ finding.severity_label }}
+          </span>
+        </div>
+
+        <!-- Location -->
+        <div class="finding-meta">
+          <span class="finding-location">📍 Line {{ finding.line }}</span>
+        </div>
+
+        <!-- Description -->
+        <div class="finding-section">
+          <p class="finding-sec-label">⚠️ Description</p>
+          <p class="finding-desc">{{ finding.description }}</p>
+        </div>
+
+        <!-- Code Snippet -->
+        {% if finding.code_snippet %}
+        <div class="finding-section">
+          <p class="finding-sec-label">📋 Code Snippet</p>
+          <pre class="code-block"><code>{{ finding.code_snippet }}</code></pre>
+        </div>
+        {% endif %}
+
+        <!-- Fix -->
+        <div class="finding-section finding-fix">
+          <p class="finding-sec-label">🔧 Recommended Fix</p>
+          <p class="finding-fix-text">{{ finding.fix }}</p>
+        </div>
+
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Blockchain Simulation Panel -->
+    {% if report.simulation %}
+    <section class="card sim-card">
+      <div class="sim-header">
+        <div>
+          <h2 class="section-title">⛓️ Blockchain Simulation</h2>
+          <p class="section-sub">
+            {% if report.simulation.success %}
+              Ganache local blockchain started &mdash; {{ report.simulation.attacks_run | length }} attack scenario(s) simulated.
+            {% else %}
+              {{ report.simulation.summary }}
+            {% endif %}
+          </p>
+        </div>
+        <span class="sim-status-badge {% if report.simulation.success %}sim-ok{% else %}sim-warn{% endif %}">
+          {% if report.simulation.success %}🟢 Live{% else %}⚠️ Unavailable{% endif %}
+        </span>
+      </div>
+
+      {% if report.simulation.success and report.simulation.accounts %}
+      <div class="sim-accounts">
+        <p class="finding-sec-label">🏦 Ganache Test Accounts</p>
+        {% for acc in report.simulation.accounts %}
+          <code class="sim-addr">{{ acc }}</code>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if report.simulation.attacks_run %}
+      <div class="sim-attacks">
+        <p class="finding-sec-label">⚔️ Attack Scenarios</p>
+        {% for attack in report.simulation.attacks_run %}
+        <div class="attack-card {% if attack.exploitable %}attack-exploitable{% else %}attack-none{% endif %}">
+          <div class="attack-header">
+            <span class="attack-name">{{ attack.attack }}</span>
+            {% if attack.exploitable %}
+              <span class="exploit-badge">💀 EXPLOITABLE</span>
+            {% else %}
+              <span class="exploit-badge exploit-none">✅ N/A</span>
+            {% endif %}
+          </div>
+          <p class="attack-desc">{{ attack.description }}</p>
+          {% if attack.simulated_loss and attack.simulated_loss != 'N/A' %}
+          <p class="attack-loss">💸 Simulated Loss: <strong>{{ attack.simulated_loss }}</strong></p>
+          {% endif %}
+          {% if attack.tx_hash %}
+          <p class="attack-tx">🔗 Demo Tx: <code class="sim-addr">{{ attack.tx_hash }}</code></p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if report.simulation.error %}
+      <p class="sim-error">{{ report.simulation.error }}</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- Bottom CTA -->
+    <div class="report-actions">
+      <a href="/" class="btn btn-outline">← Scan Another</a>
+      <a href="/report/export/json" class="btn btn-export" title="Download scan results as JSON">
+        ⬇️ Export JSON
+      </a>
+      <button onclick="window.print()" class="btn btn-print" title="Print or save as PDF">
+        🖨️ Print / PDF
+      </button>
+    </div>
+
+
+
+    <footer class="footer">
+      <p>Built by <span class="brand">Kru Infosec</span> &mdash; Smart Contract Security Research</p>
+    </footer>
+
+  </main>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

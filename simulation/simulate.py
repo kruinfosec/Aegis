@@ -65,10 +65,7 @@ class GanacheSimulator:
         """Start Ganache in the background. Returns True if ready."""
         try:
             self._process = subprocess.Popen(
-                ["npx", "ganache", f"--port={GANACHE_PORT}",
-                 "--deterministic",      # Fixed accounts for reproducibility
-                 "--accounts=5",
-                 "--quiet"],
+                f"npx ganache --port={GANACHE_PORT} --deterministic --accounts=5 --quiet",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 shell=True,

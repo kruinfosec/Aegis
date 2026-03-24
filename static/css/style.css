@@ -33,6 +33,33 @@
   --radius-sm:   8px;
   --shadow:      0 8px 32px rgba(0,0,0,0.5);
   --glow-cyan:   0 0 30px rgba(0,255,231,0.15);
+  
+  /* Additional variables for easier theming */
+  --bg-grid-color: rgba(0,255,231,0.03);
+  --glass-opacity: 0.75;
+}
+
+[data-theme="light"] {
+  --bg:          #f4f6fa;
+  --bg-card:     rgba(255, 255, 255, 0.9);
+  --border:      rgba(0, 50, 100, 0.1);
+  --border-hover:rgba(0, 102, 255, 0.3);
+  --text:        #334155;
+  --text-dim:    #64748b;
+  --text-bright: #0f172a;
+  
+  /* Keep brand colors but adjust dims for light background */
+  --cyan-dim:    rgba(0, 200, 180, 0.1);
+  --blue-dim:    rgba(0, 102, 255, 0.08);
+  --red-dim:     rgba(255, 59, 92, 0.08);
+  --orange-dim:  rgba(255, 125, 59, 0.08);
+  --yellow-dim:  rgba(230, 170, 0, 0.1);
+  --green-dim:   rgba(0, 180, 120, 0.08);
+  
+  --shadow:      0 8px 30px rgba(0,0,0,0.06);
+  --glow-cyan:   0 0 20px rgba(0, 150, 255, 0.1);
+  
+  --bg-grid-color: rgba(0,100,255,0.03);
 }
 
 html { scroll-behavior: smooth; }
@@ -49,8 +76,8 @@ body {
 .bg-grid {
   position: fixed; inset: 0; z-index: 0;
   background-image:
-    linear-gradient(rgba(0,255,231,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,231,0.03) 1px, transparent 1px);
+    linear-gradient(var(--bg-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
 }
@@ -139,8 +166,9 @@ body {
   border-radius: var(--radius);
   padding: 28px;
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   box-shadow: var(--shadow);
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
 }
 .card:hover { border-color: var(--border-hover); }
 
@@ -243,7 +271,7 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 18px 12px; border-radius: var(--radius-sm);
   text-decoration: none; font-size: 0.9rem; font-weight: 500;
-  border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); background: var(--bg-card);
   transition: all 0.25s ease; color: var(--text-bright);
 }
 .sample-btn:hover { transform: translateY(-3px); border-color: var(--border-hover); }
@@ -256,7 +284,7 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
 
 /* ─── Vuln Overview (index) ──────────────────────────────── */
 .vuln-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.vuln-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+.vuln-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border); }
 .vuln-sev {
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.8px;
   padding: 3px 8px; border-radius: 20px; white-space: nowrap;
@@ -300,7 +328,7 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
 .stat-box {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 14px 10px; border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  background: var(--bg-card); border: 1px solid var(--border);
 }
 .stat-num          { font-size: 2rem; font-weight: 800; color: var(--text-bright); line-height: 1; }
 .stat-critical     { color: var(--red); }
@@ -344,7 +372,7 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
 
 .finding-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .finding-title-row { display: flex; align-items: center; gap: 10px; }
-.finding-num { font-size: 0.8rem; font-weight: 700; color: var(--text-dim); background: rgba(255,255,255,0.07); padding: 3px 8px; border-radius: 4px; }
+.finding-num { font-size: 0.8rem; font-weight: 700; color: var(--text-dim); background: var(--border); padding: 3px 8px; border-radius: 4px; }
 .finding-name { font-size: 1.1rem; font-weight: 700; color: var(--text-bright); }
 
 /* Severity Badge */
@@ -366,10 +394,13 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
 .finding-desc { font-size: 0.92rem; color: var(--text); line-height: 1.65; }
 
 .code-block {
-  background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,231,0.1);
+  background: rgba(0,0,0,0.8); border: 1px solid rgba(0,255,231,0.1);
   border-radius: var(--radius-sm); padding: 14px 16px;
   font-family: var(--font-mono); font-size: 0.82rem; color: #9de8c8;
   overflow-x: auto; white-space: pre; line-height: 1.6;
+}
+[data-theme="light"] .code-block {
+  background: #1e293b; border: 1px solid #cbd5e1; color: #34d399;
 }
 
 .finding-fix { background: rgba(0,102,255,0.06); padding: 14px; border-radius: var(--radius-sm); border: 1px solid rgba(0,102,255,0.15); }
@@ -395,8 +426,8 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
 
 /* ─── Blockchain Simulation Panel ────────────────────────── */
 .sim-card {
-  border-color: rgba(0,255,231,0.2);
-  background: rgba(0,10,30,0.8);
+  border-color: var(--cyan-dim);
+  background: var(--bg-card);
 }
 
 .sim-header {
@@ -432,16 +463,15 @@ code { font-family: var(--font-mono); color: var(--cyan); background: var(--cyan
   padding: 16px 18px;
   border: 1px solid;
   transition: transform 0.2s;
+  background: var(--bg);
 }
 .attack-card:hover { transform: translateX(4px); }
 .attack-exploitable {
-  background: rgba(255,59,92,0.06);
-  border-color: rgba(255,59,92,0.25);
+  border-color: var(--red-dim);
   border-left: 4px solid var(--red);
 }
 .attack-none {
-  background: rgba(0,214,143,0.04);
-  border-color: rgba(0,214,143,0.2);
+  border-color: var(--green-dim);
   border-left: 4px solid var(--green);
 }
 

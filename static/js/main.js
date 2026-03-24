@@ -6,6 +6,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   /* ── Elements ─────────────────────────────────────────── */
+  const themeToggle = document.getElementById("themeToggle");
   const dropZone    = document.getElementById("dropZone");
   const fileInput   = document.getElementById("fileInput");
   const dropContent = document.getElementById("dropContent");
@@ -16,7 +17,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnText     = scanBtn?.querySelector(".btn-text");
   const btnLoading  = scanBtn?.querySelector(".btn-loading");
 
-  if (!dropZone) return; // Not on index page, skip
+  /* ── Theme Toggling ───────────────────────────────────── */
+  if (themeToggle) {
+    // Check local storage or system preference
+    const savedTheme = localStorage.getItem("aegis_theme");
+    if (savedTheme === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+      themeToggle.textContent = "☀️"; // Sun for light mode
+    } else {
+      themeToggle.textContent = "🌓"; // Moon for dark mode
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      if (currentTheme === "light") {
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.setItem("aegis_theme", "dark");
+        themeToggle.textContent = "🌓";
+      } else {
+        document.documentElement.setAttribute("data-theme", "light");
+        localStorage.setItem("aegis_theme", "light");
+        themeToggle.textContent = "☀️";
+      }
+    });
+  }
+
+  if (!dropZone) return; // Not on index page past here, skip
 
   /* ── File Selected Helper ─────────────────────────────── */
   function handleFile(file) {

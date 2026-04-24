@@ -1,0 +1,13 @@
+{% macro no_findings(report) -%}
+<section class="card safe-card">
+  <div class="safe-content">
+    <h3>No vulnerabilities detected</h3>
+    <p>Aegis did not flag common vulnerability patterns in this contract.</p>
+    {% if report.runtime_requested %}
+    <p class="safe-note">Runtime validation had no findings to exercise.</p>
+    {% else %}
+    <p class="safe-note">Static analysis is useful triage, but it is not a substitute for a high-value contract audit.</p>
+    {% endif %}
+  </div>
+</section>
+{%- endmacro %}

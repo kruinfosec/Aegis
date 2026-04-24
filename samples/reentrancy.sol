@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.0;
 
 /**
  * Aegis Sample Contract: Reentrancy Vulnerability
@@ -32,7 +32,11 @@ contract VulnerableBank {
         require(success, "Transfer failed");
 
         // State update happens TOO LATE
-        balances[msg.sender] -= amount;
+        // Using unchecked to model pre-0.8 behavior where underflow
+        // does not revert — this is what makes the drain possible.
+        unchecked {
+            balances[msg.sender] -= amount;
+        }
     }
 
     function getBalance() public view returns (uint256) {

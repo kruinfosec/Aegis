@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  setupReportFilters();
+
   if (!dropZone) return; // Not on index page past here, skip
 
   /* ── File Selected Helper ─────────────────────────────── */
@@ -146,3 +148,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+
+function setupReportFilters() {
+  const cards = Array.from(document.querySelectorAll(".finding-card"));
+  const chips = Array.from(document.querySelectorAll(".filter-chip"));
+  const empty = document.getElementById("filterEmpty");
+  if (!cards.length || !chips.length) return;
+
+  const state = {
+    runtime: "all",
+    severity: "all",
+  };
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const type = chip.dataset.filterType;
+      const value = chip.dataset.filterValue;
+      if (!type || !value) return;
+      state[type] = value;
+
+      chips
+        .filter((item) => item.dataset.filterType === type)
+        .forEach((item) => item.classList.toggle("active", item === chip));
+
+      let visibleCount = 0;
+      cards.forEach((card) => {
+        const runtimeMatch = state.runtime === "all" || card.dataset.runtimeStatus === state.runtime;
+        const severityMatch = state.severity === "all" || card.dataset.severity === state.severity;
+        const visible = runtimeMatch && severityMatch;
+        card.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      if (empty) empty.hidden = visibleCount !== 0;
+    });
+  });
+}

@@ -1,163 +1,65 @@
-# Blockchain Smart Contract Vulnerability Scanner
+# Aegis Project Overview
 
-A lightweight security analysis tool designed to **detect common vulnerabilities in Ethereum smart contracts**.  
-This project demonstrates how static analysis techniques can identify security risks before deployment.
+Aegis is a development-stage Solidity security scanner. It combines static
+analysis, selected Hardhat-backed runtime validation, correlation, and report
+generation across a Flask web UI and CLI.
 
----
+## Current Purpose
 
-## Project Overview
+Aegis helps developers and reviewers find common smart contract risk patterns,
+then validate selected high-risk findings in a deterministic local Hardhat setup
+where a focused runtime scenario exists.
 
-Smart contracts manage **millions of dollars in blockchain ecosystems**, but even small coding mistakes can lead to major exploits.  
-This project builds a **Smart Contract Vulnerability Scanner** that analyzes Solidity code and detects common security issues.
+It should be treated as an engineering aid, learning tool, and regression/demo
+environment, not as a substitute for a professional audit.
 
-The tool accepts a Solidity contract, scans it using **static analysis and pattern detection**, and produces a **security report highlighting vulnerabilities and recommended fixes**.
+## Main Capabilities
 
----
+- Static detection for common Solidity risks such as reentrancy, arithmetic
+  overflow, weak randomness, timestamp dependence, delegatecall, access control,
+  unchecked low-level calls, `tx.origin`, and unprotected `selfdestruct`.
+- Runtime validation for selected families using Hardhat Network.
+- Correlation that merges runtime results back into static findings.
+- Report output through the web UI, CLI text, and CLI/route JSON export.
+- Curated demo and verification workflows through `scripts/dev.py`.
 
-## Problem Statement
+## Runtime-Validated Families
 
-Smart contracts frequently contain security flaws such as:
+Runtime scenarios currently exist for:
 
-- Reentrancy attacks
-- Integer overflows
-- Unauthorized access vulnerabilities
-- Weak randomness
+- access control
+- reentrancy
+- delegatecall
+- integer overflow / arithmetic overflow
+- timestamp dependence
+- weak randomness
 
-These vulnerabilities have historically resulted in **massive financial losses in blockchain systems**.
+Runtime evidence is local-chain evidence from the tested scenario. It can support
+`confirmed_by_runtime`, `not_confirmed_by_runtime`, `inconclusive_runtime`,
+`simulation_unsupported`, or `simulation_failed`, but it should not be overstated
+as complete deployment-wide exploit proof.
 
-This project aims to **automatically detect such vulnerabilities before contracts are deployed.**
+## Architecture
 
----
+1. Input enters through the Flask app, CLI, tests, or sample/demo workflow.
+2. `scanner.engine` runs static detectors and produces normalized findings.
+3. `scanner.pipeline.full_scan()` optionally requests runtime validation.
+4. `simulation.service` dispatches supported findings to Hardhat scenarios.
+5. `scanner.correlation` merges runtime evidence and statuses into findings.
+6. `scanner.report` shapes stable report data for templates and exports.
+7. Web, CLI text, and JSON output consume the same enriched result model.
 
-## Project Solution
+## Developer Workflow
 
-The proposed solution is a **static analysis security scanner** that:
+Use the workflow hub for repeatable commands:
 
-1. Accepts a **Solidity smart contract file**
-2. Analyzes the contract structure
-3. Detects common vulnerability patterns
-4. Assigns **risk severity**
-5. Generates a **security report with suggested fixes**
+```bash
+python scripts/dev.py demos
+python scripts/dev.py demo weak-randomness
+python scripts/dev.py check fast
+python scripts/dev.py check runtime
+python scripts/dev.py check full
+```
 
----
-
-## System Architecture
-
-The project is divided into **four main modules**:
-
-### 1. Smart Contract Input Module
-
-Handles the input of smart contracts.
-
-**Features**
-
-- Upload Solidity `.sol` files
-- Validate contract format
-- Prepare contract for analysis
-
----
-
-### 2. Vulnerability Detection Engine
-
-Core analysis engine responsible for identifying vulnerabilities.
-
-**Detectable Vulnerabilities**
-
-- Reentrancy attacks
-- Integer overflow / underflow
-- `tx.origin` authentication misuse
-- Unprotected `selfdestruct`
-
-**Analysis Methods**
-
-- Static code analysis
-- Pattern matching
-- Regex-based detection
-- Logic rule analysis
-- Optional AST parsing
-
----
-
-### 3. Blockchain Simulation Module
-
-Simulates contract behavior to understand potential attack scenarios.
-
-**Capabilities**
-
-- Simulate transaction execution
-- Demonstrate possible attack attempts
-- Test contract response under malicious conditions
-
----
-
-### 4. Security Report Generator
-
-Produces a structured vulnerability report.
-
-- Example output:
-- Vulnerability: Reentrancy
-- Severity: High
-- Location: Line 45
-- Recommended Fix: Use ReentrancyGuard
-
----
-
-Reports include:
-
-- Vulnerability type
-- Severity level
-- Code location
-- Recommended mitigation
-
----
-
-## Tech Stack
-
-| Technology | Purpose |
-|------------|---------|
-| Python | Core scanning engine |
-| Solidity | Smart contract language |
-| Flask | Optional web interface |
-| Regex / AST Parsing | Vulnerability detection |
-| Ganache | Local blockchain simulation |
-
----
-
-## Why This Project is Valuable
-
-This project demonstrates key cybersecurity and blockchain concepts:
-
-- Smart contract security analysis
-- Static code analysis techniques
-- Vulnerability detection algorithms
-- Blockchain simulation environments
-- Secure software development practices
-
----
-
-## Expected Outcome
-
-The final system will:
-
-- Analyze Solidity smart contracts
-- Detect multiple vulnerability types
-- Generate a detailed security report
-- Help developers **secure their contracts before deployment**
-
----
-
-## Future Improvements
-
-Potential enhancements include:
-
-- Integration with **Slither or Mythril engines**
-- Support for **additional vulnerability types**
-- Interactive **web dashboard**
-- Automatic **fix suggestions**
-- CI/CD integration for smart contract security scanning
-
----
-
-## Author
-
-Student cybersecurity project focused on **blockchain smart contract security analysis**.
+See [docs/dev-workflow.md](docs/dev-workflow.md) for the current command guide,
+demo matrix, verification tiers, and scaffold flow.

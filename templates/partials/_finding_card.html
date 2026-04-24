@@ -1,0 +1,96 @@
+{% from "partials/_report_macros.html" import runtime_badge, evidence_table %}
+
+<article
+  class="finding-card {{ finding.severity_css | default('severity-info') }}"
+  id="finding-{{ finding_index }}"
+  data-severity="{{ finding.severity }}"
+  data-runtime-status="{{ finding.runtime_validation_status|default('NOT_RUN') }}"
+>
+  <header class="finding-header">
+    <div>
+      <div class="finding-title-row">
+        <span class="finding-num">#{{ finding_index }}</span>
+        <h3 class="finding-name">{{ finding.vulnerability | default("Finding") }}</h3>
+      </div>
+      <div class="finding-meta">
+        <span class="finding-location">Line {{ finding.line | default("unknown") }}</span>
+        <span class="finding-tag">{{ finding.scope_label | default("Contract scope") }}</span>
+        {% if finding.swc_id %}<span class="finding-tag">{{ finding.swc_id }}</span>{% endif %}
+        <span class="finding-tag">Confidence {{ finding.confidence | default("UNKNOWN") }}</span>
+      </div>
+    </div>
+    <div class="finding-badges">
+      <span class="severity-badge {{ finding.severity_css | default('severity-info') }}">{{ finding.severity_label | default(finding.severity | default("INFO")) }}</span>
+      {{ runtime_badge(finding) }}
+    </div>
+  </header>
+
+  <div class="finding-preview-grid">
+    <section>
+      <p class="finding-sec-label">Rationale</p>
+      <p class="finding-desc">{{ finding.rationale_preview | default(finding.description | default("Aegis flagged this source pattern for review.")) }}</p>
+    </section>
+    <section>
+      <p class="finding-sec-label">Evidence preview</p>
+      <p class="finding-desc">{{ finding.runtime_evidence_preview if finding.runtime_validation_status != "NOT_RUN" else finding.static_evidence_preview }}</p>
+    </section>
+  </div>
+
+  <details class="finding-details">
+    <summary>Details and remediation</summary>
+
+    <div class="finding-detail-grid">
+      <section class="finding-section">
+        <p class="finding-sec-label">Impact</p>
+        <p class="finding-desc">{{ finding.impact | default("Impact not recorded.") }}</p>
+      </section>
+      <section class="finding-section">
+        <p class="finding-sec-label">Exploit path</p>
+        <p class="finding-desc">{{ finding.exploit_path | default("Exploit path not recorded.") }}</p>
+      </section>
+    </div>
+
+    {% if finding.runtime_validation_status and finding.runtime_validation_status != "NOT_RUN" %}
+    <section class="finding-section rt-detail-section">
+      <p class="finding-sec-label">Runtime validation</p>
+      <div class="rt-detail-grid">
+        <div class="rt-detail-item"><span class="rt-detail-key">Status</span><span class="rt-detail-val">{{ finding.runtime_status_label }}</span></div>
+        <div class="rt-detail-item"><span class="rt-detail-key">Backend</span><span class="rt-detail-val">{{ finding.runtime_backend or "unknown" }}</span></div>
+        <div class="rt-detail-item"><span class="rt-detail-key">Scenario</span><span class="rt-detail-val">{{ finding.runtime_scenario or "not recorded" }}</span></div>
+        <div class="rt-detail-item"><span class="rt-detail-key">Dynamic</span><span class="rt-detail-val">{{ finding.verification.dynamic | default("NOT_RUN") }}</span></div>
+      </div>
+      {{ evidence_table(finding.runtime_evidence_items) }}
+      {% if finding.validation_notes %}
+      <div class="rt-notes">
+        {% for note in finding.validation_notes %}
+        <p class="rt-note">{{ note }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if finding.code_snippet %}
+    <section class="finding-section">
+      <p class="finding-sec-label">Code snippet</p>
+      <pre class="code-block"><code>{{ finding.code_snippet }}</code></pre>
+    </section>
+    {% endif %}
+
+    <section class="finding-section finding-fix">
+      <p class="finding-sec-label">Recommended fix</p>
+      <p class="finding-fix-text">{{ finding.remediation or finding.fix | default("Review the finding and apply the appropriate mitigation.") }}</p>
+    </section>
+
+    {% if finding.limitations %}
+    <section class="finding-section">
+      <p class="finding-sec-label">Limitations</p>
+      <ul class="finding-list">
+        {% for limitation in finding.limitations %}
+        <li>{{ limitation }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </details>
+</article>

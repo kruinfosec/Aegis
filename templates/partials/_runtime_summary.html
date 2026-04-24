@@ -1,0 +1,58 @@
+{% from "partials/_report_macros.html" import stat_tile %}
+
+{% set rt = report.runtime_correlation | default({}) %}
+<section class="card rt-summary-card" id="runtime-summary">
+  <div class="section-heading-row">
+    <div>
+      <h2 class="section-title">Runtime validation</h2>
+      <p class="section-sub">Dynamic evidence is scoped to the executed local scenario.</p>
+    </div>
+    {% if rt and rt.runtime_executed %}
+    <span class="finding-tag">{{ rt.runtime_validated_count | default(0) }} / {{ rt.total_findings | default(0) }} validated</span>
+    {% endif %}
+  </div>
+
+  {% if rt and rt.runtime_requested and rt.runtime_executed %}
+  <div class="rt-stats-row">
+    {{ stat_tile("Confirmed", rt.confirmed_count | default(0), "rt-confirmed-wrap") }}
+    {{ stat_tile("Not Confirmed", rt.not_confirmed_count | default(0), "rt-not-confirmed-wrap") }}
+    {{ stat_tile("Inconclusive", rt.inconclusive_count | default(0), "rt-inconclusive-wrap") }}
+    {{ stat_tile("Unsupported", rt.unsupported_count | default(0), "rt-unsupported-wrap") }}
+    {{ stat_tile("Failed", rt.failed_count | default(0), "rt-failed-wrap") }}
+    {{ stat_tile("Not Run", rt.not_run_count | default(0), "rt-not-run-wrap") }}
+  </div>
+
+  <div class="rt-meta">
+    <span>Backend <strong>{{ rt.backend or "unknown" }}</strong></span>
+    {% if rt.scenario_families_executed %}
+    <span>Scenarios <strong>{{ rt.scenario_families_executed | join(", ") }}</strong></span>
+    {% endif %}
+  </div>
+  {% elif rt and rt.runtime_requested %}
+  <div class="empty-panel">
+    <strong>Runtime did not execute.</strong>
+    {% if report.simulation and report.simulation.summary %}
+    <span>{{ report.simulation.summary }}</span>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-panel">
+    <strong>Static analysis only.</strong>
+    <span>Runtime validation was not requested for this report.</span>
+  </div>
+  {% endif %}
+
+  {% if report.simulation_diagnostics %}
+  <details class="diagnostics-details">
+    <summary>Diagnostics</summary>
+    <div class="rt-diag-grid">
+      {% set diag = report.simulation_diagnostics %}
+      {% if diag.total_ms | default(none) is not none %}<span class="rt-diag-item">Total <strong>{{ "%.1f"|format(diag.total_ms) }}ms</strong></span>{% endif %}
+      {% if diag.compilation_ms | default(none) is not none %}<span class="rt-diag-item">Compile <strong>{{ "%.1f"|format(diag.compilation_ms) }}ms</strong>{% if diag.compilation_cache_hit | default(false) %} <em>cache hit</em>{% endif %}</span>{% endif %}
+      {% if diag.backend_startup_ms | default(none) is not none %}<span class="rt-diag-item">Startup <strong>{{ "%.1f"|format(diag.backend_startup_ms) }}ms</strong></span>{% endif %}
+      {% if diag.scenario_execution_ms | default(none) is not none %}<span class="rt-diag-item">Scenarios <strong>{{ "%.1f"|format(diag.scenario_execution_ms) }}ms</strong></span>{% endif %}
+      {% if diag.error_phase %}<span class="rt-diag-item rt-diag-error">Error phase <strong>{{ diag.error_phase }}</strong></span>{% endif %}
+    </div>
+  </details>
+  {% endif %}
+</section>

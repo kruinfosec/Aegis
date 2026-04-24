@@ -31,10 +31,9 @@ class TestAegisDetectors(unittest.TestCase):
 
     def test_reentrancy(self):
         res = self.scan_file("reentrancy.sol")
-        # reentrancy.sol has 1 reentrancy (HIGH) and 2 unchecked call (LOW)
         self.assertTrue(res["total_issues"] >= 1)
         vulnerabilities = [f["vulnerability"] for f in res["findings"]]
-        self.assertIn("Potential Reentrancy (External Call Detected)", vulnerabilities)
+        self.assertIn("Reentrancy Risk: State Update After External Call", vulnerabilities)
 
     def test_integer_overflow(self):
         res = self.scan_file("overflow.sol")

@@ -1,0 +1,44 @@
+{
+  "name": "aegis",
+  "version": "1.0.0",
+  "description": "A lightweight Solidity security scanner with static analysis and selected Hardhat-backed runtime validation.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev:web": "python scripts/dev.py web",
+    "demo:list": "python scripts/dev.py demos",
+    "demo:scan": "python scripts/dev.py demo weak-randomness",
+    "demo:json": "python scripts/dev.py json-smoke weak-randomness",
+    "benchmark:list": "python scripts/dev.py benchmark list",
+    "benchmark:quick": "python scripts/dev.py benchmark run --quick",
+    "benchmark:full": "python scripts/dev.py benchmark run --write",
+    "test": "python scripts/dev.py fast",
+    "test:fast": "python scripts/dev.py fast",
+    "test:full": "python scripts/dev.py check full",
+    "test:report": "python scripts/dev.py report",
+    "test:runtime": "python scripts/dev.py runtime",
+    "verify:demo": "python scripts/dev.py check demo",
+    "verify:benchmark": "python scripts/dev.py check benchmark",
+    "verify:runtime-support": "python scripts/dev.py check runtime-support",
+    "runtime:support": "python scripts/dev.py support-matrix",
+    "runtime:diagnose": "python scripts/dev.py diagnose samples/reentrancy.sol"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kruinfosec/Aegis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/kruinfosec/Aegis/issues"
+  },
+  "homepage": "https://github.com/kruinfosec/Aegis#readme",
+  "devDependencies": {
+    "hardhat": "^3.4.1",
+    "solc": "^0.8.34"
+  }
+}

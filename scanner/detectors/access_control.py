@@ -1,41 +1,74 @@
-import re
+"""
+Aegis access control detector.
+
+This detector focuses on privileged functions that appear externally reachable
+and lack recognizable authorization checks.
+"""
+
+from scanner.detectors.common import (
+    function_snippet,
+    is_likely_sensitive_function,
+)
+
 
 def detect(parsed: dict) -> list:
     findings = []
+    context = parsed.get("analysis_context", {})
+    functions = context.get("functions", [])
     lines = parsed["lines"]
-    
-    # Sensitive function names that typically require access control
-    sensitive_functions = [r'transferOwnership', r'withdrawAll', r'emergencyWithdraw', r'mint', r'burn', r'setOwner', r'kill', r'destroy']
-    pattern = r'function\s+(' + '|'.join(sensitive_functions) + r')\s*\('
-    
-    for line_num, line_content in lines:
-        stripped = line_content.strip()
 
-        if stripped.startswith('//') or stripped.startswith('*'):
+    for function in functions:
+        if function.get("kind") != "function":
+            continue
+        if function.get("visibility") not in {"public", "external", ""}:
+            continue
+        if not is_likely_sensitive_function(function):
+            continue
+        if function.get("has_auth"):
             continue
 
-        match = re.search(pattern, line_content, re.IGNORECASE)
-        if match:
-            # Check if it lacks common access control modifiers
-            if not re.search(r'\b(onlyOwner|onlyAdmin|onlyRole|internal|private)\b', line_content):
-                fn_name = match.group(1)
-                findings.append({
-                    "vulnerability": f"Missing Access Control in {fn_name}()",
-                    "severity": "HIGH",
-                    "line": line_num,
-                    "description": (
-                        f"The '{fn_name}' function appears to modify critical state but "
-                        f"lacks an access control modifier (like 'onlyOwner'). "
-                        f"This could allow any user to execute this privileged action."
-                    ),
-                    "fix": "Add a modifier such as 'onlyOwner' (e.g. from OpenZeppelin's Ownable module) or an explicit 'require(msg.sender == owner)' check.",
-                    "code_snippet": _get_lines_around(lines, line_num, context=2),
-                })
-            
-    return findings
+        function_name = function["name"]
+        severity = "CRITICAL" if function_name.lower() in {"kill", "destroy"} else "HIGH"
+        confidence = "HIGH" if function_name.lower() in {"mint", "transferownership", "setowner", "kill", "destroy"} else "MEDIUM"
+        findings.append(
+            {
+                "vulnerability": f"Missing Access Control in {function_name}()",
+                "severity": severity,
+                "confidence": confidence,
+                "function": function_name,
+                "contract_name": function.get("contract_name"),
+                "line": function["start_line"],
+                "description": (
+                    f"Function '{function_name}' appears to perform privileged or security-sensitive "
+                    "behavior but Aegis did not find a recognized access control modifier or inline "
+                    "authorization check."
+                ),
+                "impact": (
+                    "An arbitrary caller may be able to invoke a privileged function and change "
+                    "ownership, mint value, upgrade logic, or destroy the contract."
+                ),
+                "exploit_path": (
+                    f"An external user calls '{function_name}()' directly because the function is "
+                    "externally reachable and no visible authorization gate was detected."
+                ),
+                "fix": (
+                    "Protect the function with a well-defined authorization mechanism such as "
+                    "onlyOwner, onlyRole, or an explicit require(msg.sender == owner) check."
+                ),
+                "remediation": (
+                    "Restrict privileged functions with a standard modifier and keep access checks "
+                    "close to the function entry point for easier review."
+                ),
+                "limitations": [
+                    "Aegis recognizes common modifier and require-style authorization patterns only.",
+                    "Custom authorization implemented through internal helper calls may not be detected.",
+                ],
+                "evidence_notes": (
+                    f"Sensitive function '{function_name}' is {function.get('visibility') or 'externally'} "
+                    "reachable and no recognized access-control pattern was found."
+                ),
+                "code_snippet": function_snippet(lines, function),
+            }
+        )
 
-def _get_lines_around(lines: list, target_line: int, context: int = 2) -> str:
-    start = max(0, target_line - context - 1)
-    end = min(len(lines), target_line + context)
-    snippet = "\n".join(f"{line_num}: {content}" for line_num, content in lines[start:end])
-    return snippet
+    return findings

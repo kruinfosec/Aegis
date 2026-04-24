@@ -1,0 +1,48 @@
+{% from "partials/_report_macros.html" import stat_tile %}
+{% set severity_counts = report.severity_counts | default({}) %}
+{% set runtime_counts = report.runtime_status_counts | default({}) %}
+{% set scan_time_ms = report.scan_time_ms | default(none) %}
+
+<section class="card report-hero">
+  <div class="report-hero-main">
+    <div>
+      <p class="report-label">Scan report</p>
+      <h2 class="report-filename">{{ report.filename | default("Unknown contract") }}</h2>
+      <p class="report-meta">
+        {{ report.line_count or 0 }} lines
+        {% if report.pragma_version %} · Solidity {{ report.pragma_version }}{% endif %}
+        {% if report.contracts_count %} · {{ report.contracts_count }} contract{{ "s" if report.contracts_count != 1 else "" }}{% endif %}
+      </p>
+      {% if report.contract_names %}
+      <div class="contract-pills">
+        {% for contract in report.contract_names[:6] %}
+        <span class="finding-tag">{{ contract }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="report-risk-badge {{ report.risk_css | default('risk-unknown') }}">
+      <span class="risk-label">{{ report.risk_label | default("UNKNOWN") }}</span>
+      <span class="risk-score">Score {{ report.risk_score | default(0) }}</span>
+    </div>
+  </div>
+
+  <div class="trust-strip">
+    <span>Runtime requested: <strong>{{ "yes" if report.runtime_requested else "no" }}</strong></span>
+    <span>Runtime executed: <strong>{{ "yes" if report.runtime_executed else "no" }}</strong></span>
+    <span>Backend: <strong>{{ report.runtime_backend or "static only" }}</strong></span>
+    {% if scan_time_ms is not none %}
+    <span>Total runtime: <strong>{{ "%.0f"|format(scan_time_ms) }}ms</strong></span>
+    {% endif %}
+  </div>
+
+  <div class="stats-row">
+    {{ stat_tile("Total Issues", report.total_issues | default(0)) }}
+    {{ stat_tile("Critical", severity_counts.get("CRITICAL", 0), "stat-critical-wrap") }}
+    {{ stat_tile("High", severity_counts.get("HIGH", 0), "stat-high-wrap") }}
+    {{ stat_tile("Medium", severity_counts.get("MEDIUM", 0), "stat-medium-wrap") }}
+    {{ stat_tile("Low", severity_counts.get("LOW", 0), "stat-low-wrap") }}
+    {{ stat_tile("Runtime Confirmed", runtime_counts.get("confirmed_by_runtime", 0), "stat-confirmed-wrap") }}
+  </div>
+</section>

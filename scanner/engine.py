@@ -4,6 +4,7 @@ engine.py: Orchestrates all vulnerability detectors and aggregates findings.
 """
 
 from scanner import parser
+from scanner.finding import normalize_finding, summarize_findings
 from scanner.detectors import (
     reentrancy, integer_overflow, tx_origin,
     selfdestruct, weak_randomness, unchecked_calls,
@@ -49,16 +50,24 @@ def scan(source_code: str, filename: str = "contract.sol") -> dict:
         }
 
     # Step 2: Run all detectors
+    detector_runs = [
+        ("reentrancy", reentrancy.detect(parsed)),
+        ("integer_overflow", integer_overflow.detect(parsed)),
+        ("tx_origin", tx_origin.detect(parsed)),
+        ("selfdestruct", selfdestruct.detect(parsed)),
+        ("weak_randomness", weak_randomness.detect(parsed)),
+        ("unchecked_calls", unchecked_calls.detect(parsed)),
+        ("delegatecall", delegatecall.detect(parsed)),
+        ("access_control", access_control.detect(parsed)),
+        ("timestamp_dependence", timestamp_dependence.detect(parsed)),
+    ]
+
     all_findings = []
-    all_findings.extend(reentrancy.detect(parsed))
-    all_findings.extend(integer_overflow.detect(parsed))
-    all_findings.extend(tx_origin.detect(parsed))
-    all_findings.extend(selfdestruct.detect(parsed))
-    all_findings.extend(weak_randomness.detect(parsed))
-    all_findings.extend(unchecked_calls.detect(parsed))
-    all_findings.extend(delegatecall.detect(parsed))
-    all_findings.extend(access_control.detect(parsed))
-    all_findings.extend(timestamp_dependence.detect(parsed))
+    for detector_key, findings in detector_runs:
+        all_findings.extend(
+            normalize_finding(detector_key, finding, filename)
+            for finding in findings
+        )
 
     # Step 3: Sort findings by severity (most critical first)
     severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
@@ -81,6 +90,7 @@ def scan(source_code: str, filename: str = "contract.sol") -> dict:
         "pragma_version": parsed.get("pragma_version"),
         "has_overflow_protection": parsed.get("has_overflow_protection", False),
         "line_count": len(parsed["lines"]),
+        "analysis_summary": summarize_findings(all_findings),
     }
 
 

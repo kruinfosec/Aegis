@@ -1,0 +1,21 @@
+<section class="card filter-panel" aria-label="Report filters">
+  <div class="filter-group">
+    <span class="filter-label">Runtime</span>
+    <button class="filter-chip active" data-filter-type="runtime" data-filter-value="all">All</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="confirmed_by_runtime">Confirmed</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="not_confirmed_by_runtime">Not confirmed</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="inconclusive_runtime">Inconclusive</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="simulation_unsupported">Unsupported</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="simulation_failed">Failed</button>
+    <button class="filter-chip" data-filter-type="runtime" data-filter-value="NOT_RUN">Static only</button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Severity</span>
+    <button class="filter-chip active" data-filter-type="severity" data-filter-value="all">All</button>
+    <button class="filter-chip" data-filter-type="severity" data-filter-value="CRITICAL">Critical</button>
+    <button class="filter-chip" data-filter-type="severity" data-filter-value="HIGH">High</button>
+    <button class="filter-chip" data-filter-type="severity" data-filter-value="MEDIUM">Medium</button>
+    <button class="filter-chip" data-filter-type="severity" data-filter-value="LOW">Low</button>
+  </div>
+  <p class="filter-empty" id="filterEmpty" hidden>No findings match the current filters.</p>
+</section>

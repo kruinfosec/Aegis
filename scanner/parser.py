@@ -4,6 +4,7 @@ parser.py: Reads and validates uploaded Solidity source files.
 """
 
 import re
+from scanner.detectors.common import build_analysis_context
 
 
 def parse(source_code: str) -> dict:
@@ -53,6 +54,7 @@ def parse(source_code: str) -> dict:
         "error": None,
         "pragma_version": pragma_version,
         "has_overflow_protection": has_overflow_protection,
+        "analysis_context": build_analysis_context(source_code, numbered_lines),
     }
 
 
@@ -64,4 +66,5 @@ def _error_result(message: str) -> dict:
         "error": message,
         "pragma_version": None,
         "has_overflow_protection": False,
+        "analysis_context": {"functions": [], "modifiers": [], "modifier_map": {}, "lines": []},
     }

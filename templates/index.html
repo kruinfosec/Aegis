@@ -49,7 +49,7 @@
           <button id="themeToggle" class="btn btn-outline btn-sm" aria-label="Toggle Theme" style="border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border-color: rgba(255,255,255,0.1);">
             🌓
           </button>
-          <a href="https://github.com/0xKanishk" target="_blank" class="btn btn-outline btn-sm">GitHub</a>
+          <a href="https://github.com/kruinfosec/Aegis" target="_blank" class="btn btn-outline btn-sm">GitHub</a>
         </div>
       </div>
     </header>
@@ -104,46 +104,13 @@
       <h2 class="section-title">⚡ Quick Test — Sample Contracts</h2>
       <p class="section-sub">No file? Test with a known-vulnerable contract instantly.</p>
       <div class="sample-grid">
-        <a href="/sample/reentrancy" class="sample-btn sample-high">
-          <span class="sample-icon">🔴</span>
-          <span class="sample-name">Reentrancy Attack</span>
-          <span class="sample-badge">HIGH</span>
+        {% for sample in samples %}
+        <a href="{{ url_for('load_sample', name=sample.slug) }}" class="sample-btn {{ sample.css }}" data-sample-file="{{ sample.file }}">
+          <span class="sample-icon">{{ sample.icon }}</span>
+          <span class="sample-name">{{ sample.label }}</span>
+          <span class="sample-badge">{{ sample.badge }}</span>
         </a>
-        <a href="/sample/selfdestruct" class="sample-btn sample-critical">
-          <span class="sample-icon">💀</span>
-          <span class="sample-name">Unprotected Selfdestruct</span>
-          <span class="sample-badge">CRITICAL</span>
-        </a>
-        <a href="/sample/delegatecall" class="sample-btn sample-high">
-          <span class="sample-icon">🎭</span>
-          <span class="sample-name">Untrusted Delegatecall</span>
-          <span class="sample-badge">HIGH</span>
-        </a>
-        <a href="/sample/access" class="sample-btn sample-high">
-          <span class="sample-icon">🔓</span>
-          <span class="sample-name">Missing Access Control</span>
-          <span class="sample-badge">HIGH</span>
-        </a>
-        <a href="/sample/overflow" class="sample-btn sample-medium">
-          <span class="sample-icon">🟡</span>
-          <span class="sample-name">Integer Overflow</span>
-          <span class="sample-badge">MEDIUM</span>
-        </a>
-        <a href="/sample/randomness" class="sample-btn sample-medium">
-          <span class="sample-icon">🎲</span>
-          <span class="sample-name">Weak Randomness</span>
-          <span class="sample-badge">MEDIUM</span>
-        </a>
-        <a href="/sample/timestamp" class="sample-btn sample-low">
-          <span class="sample-icon">⏱️</span>
-          <span class="sample-name">Timestamp Dependence</span>
-          <span class="sample-badge">LOW</span>
-        </a>
-        <a href="/sample/safe" class="sample-btn sample-safe">
-          <span class="sample-icon">✅</span>
-          <span class="sample-name">Safe Contract</span>
-          <span class="sample-badge">SAFE</span>
-        </a>
+        {% endfor %}
       </div>
     </section>
 

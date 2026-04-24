@@ -1,76 +1,164 @@
 """
-Aegis — Smart Contract Vulnerability Scanner
-detectors/weak_randomness.py: Detects use of weak on-chain randomness.
+Aegis weak randomness detector.
 
-Using block.timestamp, block.number, blockhash, or block.difficulty
-as a source of randomness is dangerous because miners/validators can
-manipulate these values. Attackers can predict or influence outcomes.
-
-This is commonly exploited in lottery, gambling, or NFT mint contracts.
+Flags block-derived values used as randomness-like inputs and, when the
+lightweight parser has function context, records contract/function scope so
+runtime validation can target the relevant callable path.
 """
 
 import re
 
+from scanner.detectors.common import function_snippet, get_code_snippet
+
+
+WEAK_SOURCES = [
+    (
+        r"\bblock\.timestamp\b",
+        "block.timestamp",
+        "Validators can slightly influence block timestamps. It should never be used as a randomness source.",
+    ),
+    (
+        r"\bblock\.number\b",
+        "block.number",
+        "Block numbers are predictable and publicly known. Using them as randomness allows attackers to predict outcomes.",
+    ),
+    (
+        r"\bblockhash\s*\(",
+        "blockhash()",
+        "blockhash() only works for recent blocks and is predictable or known around inclusion time.",
+    ),
+    (
+        r"\bblock\.difficulty\b",
+        "block.difficulty",
+        "block.difficulty, or block.prevrandao post-Merge, should not be used as a sole randomness source.",
+    ),
+    (
+        r"\bblock\.coinbase\b",
+        "block.coinbase",
+        "block.coinbase is known before the block is mined and must not be used for randomness.",
+    ),
+]
+
+RANDOMNESS_CONTEXT_RE = re.compile(
+    r"\b(block\.timestamp|block\.number|block\.difficulty|block\.coinbase|blockhash\s*\()"
+)
+SECURITY_IMPACT_RE = re.compile(
+    r"\b(winner|lottery|prize|payout|reward|mint|trait|random|draw|pick|transfer|call)\b",
+    re.IGNORECASE,
+)
+
 
 def detect(parsed: dict) -> list:
-    """
-    Returns findings for weak randomness sources used in contracts.
-    """
     findings = []
     lines = parsed["lines"]
-
-    # Sources that are NOT genuinely random (manipulable by validators)
-    weak_sources = [
-        (r'\bblock\.timestamp\b',  "block.timestamp",  "Miners can slightly manipulate the block timestamp (±15 seconds). It should never be used as a randomness source."),
-        (r'\bblock\.number\b',     "block.number",     "Block numbers are predictable and publicly known. Using them as randomness allows attackers to predict outcomes."),
-        (r'\bblockhash\s*\(',      "blockhash()",      "blockhash() only works for the last 256 blocks and is predictable/known to miners before inclusion."),
-        (r'\bblock\.difficulty\b', "block.difficulty", "block.difficulty (or block.prevrandao post-Merge) should not be used as a sole randomness source — it can be influenced by validators."),
-        (r'\bblock\.coinbase\b',   "block.coinbase",   "block.coinbase (the miner's address) is known before the block is mined and must not be used for randomness."),
-    ]
-
-    # Contexts where randomness is actually being USED (not just read)
-    # Look for these sources used inside assignments, conditions, or modulo ops
-    randomness_context_pattern = re.compile(
-        r'(%s)\s*(?:%|==|!=|<|>|\)|,|\s*\+|\s*\-)',  # used in an expression
-    )
-
+    context = parsed.get("analysis_context", {})
+    functions = context.get("functions", [])
     seen_lines = set()
+
+    if functions:
+        for function in functions:
+            for line_num, _line_content, source_name, explanation in _find_weak_source_lines(function, lines):
+                if line_num in seen_lines:
+                    continue
+                seen_lines.add(line_num)
+                severity, confidence = _classify_randomness_risk(function, source_name)
+                findings.append(
+                    _build_finding(
+                        parsed,
+                        line_num,
+                        source_name,
+                        explanation,
+                        severity,
+                        confidence,
+                        function=function,
+                    )
+                )
+        return findings
 
     for line_num, line_content in lines:
         stripped = line_content.strip()
-
-        # Skip pure comments
-        if stripped.startswith('//') or stripped.startswith('*'):
+        if stripped.startswith("//") or stripped.startswith("*"):
             continue
 
-        for pattern, source_name, explanation in weak_sources:
+        for pattern, source_name, explanation in WEAK_SOURCES:
             if re.search(pattern, line_content):
                 if line_num not in seen_lines:
                     seen_lines.add(line_num)
-                    findings.append({
-                        "vulnerability": f"Weak Randomness Source ({source_name})",
-                        "severity": "MEDIUM",
-                        "line": line_num,
-                        "description": (
-                            f"{source_name} is used at this line. {explanation} "
-                            f"Contracts using weak randomness for decisions like winner selection, "
-                            f"NFT traits, or game outcomes can be predicted or manipulated by "
-                            f"miners/validators and front-running bots."
-                        ),
-                        "fix": (
-                            "Use a verifiable, off-chain randomness oracle such as "
-                            "Chainlink VRF (Verifiable Random Function). Alternatively, "
-                            "use a commit-reveal scheme for trustless on-chain randomness. "
-                            "Never use block properties as a primary randomness source."
-                        ),
-                        "code_snippet": _get_lines_around(parsed["lines"], line_num, context=2),
-                    })
-                break  # One finding per line
+                    findings.append(
+                        _build_finding(
+                            parsed,
+                            line_num,
+                            source_name,
+                            explanation,
+                            "MEDIUM",
+                            "MEDIUM",
+                        )
+                    )
+                break
 
     return findings
 
 
-def _get_lines_around(lines: list, target_line: int, context: int = 2) -> str:
-    start = max(0, target_line - context - 1)
-    end = min(len(lines), target_line + context)
-    return "\n".join(f"{ln}: {content}" for ln, content in lines[start:end])
+def _find_weak_source_lines(function: dict, lines: list) -> list:
+    matches = []
+    for line_num, line_content in lines[function["start_line"] - 1:function["end_line"]]:
+        stripped = line_content.strip()
+        if stripped.startswith("//") or stripped.startswith("*"):
+            continue
+        for pattern, source_name, explanation in WEAK_SOURCES:
+            if re.search(pattern, line_content):
+                matches.append((line_num, line_content, source_name, explanation))
+                break
+    return matches
+
+
+def _classify_randomness_risk(function: dict, source_name: str) -> tuple[str, str]:
+    text = f"{function.get('header', '')}\n{function.get('body', '')}"
+    if "%" in text and SECURITY_IMPACT_RE.search(text):
+        return "MEDIUM", "HIGH"
+    if source_name in {"block.timestamp", "block.number", "blockhash()"} and RANDOMNESS_CONTEXT_RE.search(text):
+        return "MEDIUM", "MEDIUM"
+    return "LOW", "MEDIUM"
+
+
+def _build_finding(
+    parsed: dict,
+    line_num: int,
+    source_name: str,
+    explanation: str,
+    severity: str,
+    confidence: str,
+    *,
+    function: dict | None = None,
+) -> dict:
+    finding = {
+        "vulnerability": f"Weak Randomness Source ({source_name})",
+        "severity": severity,
+        "confidence": confidence,
+        "line": line_num,
+        "weak_randomness_source": source_name,
+        "description": (
+            f"{source_name} is used at this line. {explanation} "
+            "Contracts using weak randomness for decisions like winner selection, "
+            "NFT traits, or game outcomes can be predicted or influenced by validators "
+            "or transaction submitters."
+        ),
+        "fix": (
+            "Use a verifiable randomness source such as Chainlink VRF, or use a "
+            "commit-reveal scheme when a fully trustless oracle is not available. "
+            "Never use block properties as the primary randomness source."
+        ),
+        "code_snippet": get_code_snippet(parsed["lines"], line_num, context=2),
+    }
+    if function:
+        finding.update(
+            {
+                "function": function["name"],
+                "contract_name": function.get("contract_name"),
+                "code_snippet": function_snippet(parsed["lines"], function),
+                "evidence_notes": (
+                    f"Function '{function['name']}' uses {source_name} in randomness-like logic on line {line_num}."
+                ),
+            }
+        )
+    return finding
